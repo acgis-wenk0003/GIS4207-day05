@@ -1,6 +1,8 @@
 from sys import argv
 import os
+
 arcpy= None
+
 def importarcpy():
     import arcpy
     global arcpy
@@ -9,6 +11,7 @@ if len(argv) !=2:
 
 else:
     importarcpy()
+
 province=str(argv[1].upper())
 sql= "PROV = '%s' " %province
 
@@ -18,7 +21,9 @@ rows= arcpy.SearchCursor("..\..\..\Data\Canada\Can_Mjr_Cities.shp",
                         "",
                         "Name; Prov")
 currentCity=""
+
 cityCount=0
+
 print "Name, Prov"
 for row in rows:
     if currentCity != row.Name:

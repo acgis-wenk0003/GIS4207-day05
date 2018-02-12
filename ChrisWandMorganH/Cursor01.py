@@ -9,8 +9,11 @@ rows=arcpy.SearchCursor("..\..\..\Data\Canada\Can_Mjr_Cities.shp",
                         "",
                         "Name; Prov")
 currentCity=""
+
 cityCount=0
+
 print "Name, Prov"
+
 for row in rows:
     if currentCity != row.Name:
         currentCity=row.Name
