@@ -1,48 +1,65 @@
 from sys import argv
 import os
+
+"""delayed import of arcpy"""
 arcpy= None
+
 def importarcpy():
     import arcpy
     global arcpy
-if len(argv) !=2:
-    print "Usage: <province abbreviation>"
-else:
-    importarcpy()
 
-outfile=open("cursor05_output.kml","w")
+def exportToKML(infile, outkml):
+
+    """remove file and folder if they exist"""
+    if os.path.exists("../output/" + outkml):
+        os.remove("../output/" + outkml)
+    if os.path.exists("../output/"):
+        os.rmdir("../output/")
+
+    """prepare output location"""
+    os.mkdir("../output/")
+    out_kml = open("../output/" + outkml, "w")
+
+    """get header"""
+    out_kml.write(getKmlHeader())
+
+    """get list of locations and their placemark"""
+    cursorList = getCursorList(infile)
+    for cursor in cursorList:
+        placemark = getkmlplacemark(cursor[0], cursor[1], cursor[2], cursor[3])
+        out_kml.write(placemark)
+
+    """get footer and save file"""
+    out_kml.write(getKmlFooter())
+    out_kml.close()
 
 #KML setup code
 def getKmlHeader():
     """gets the header from .txt file"""
-    header_line1="<?xml version="+'"1.0"'+ ' encoding="UTF-8"?>'
-    header_line2='<kml xmlns="http://www.opengis.net/kml/2.2">'
-    header_line3='<Document>'
-    return header_line1+'\n'+header_line2+'\n'+header_line3+'\n'
+    """returns the top part of the kml file including the <Document> element"""
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2">\n<Document>'
 
 def getKmlFooter():
-    """returns the kml footer"""
-    return "</Document>"+'\n'+'</kml>'+'\n'
-def kmlplacemark(values):
-    lines="""
-    <Placemark>
-    <name>"""+value[0]+','+values[1]+"""</name>
-    <description>http://www.canmaps.com/topo/nts50/map/001n10.htm</description>
-    <Point>
-      <coordinates>"""+values[2][0]+','+values[2][1]"""</coordinates>
-    </Point>
-   </Placemark>"""
+    """has no parameters and returns </Document></kml>"""
+    return '\n</Document>\n</kml>'
 
-#cursor code
-fieldlist=["Name","Prov", "SHAPE@XY"]
-rows=arcpy.da.SearchCursor("..\..\..\Data\Canada\Can_Mjr_Cities.shp", fieldlist)
+def getkmlplacemark(name, prov, lat, lon):
+    """returns formated placemark"""
+    return '\n\t<Placemark>\n\t\t<name>{name}, {prov}</name>\n\t\t<description>http://www.canmaps.com/topo/nts50/map/001n10.htm</description>\n\t\t<Point>\n\t\t\t<coordinates>{lon},{lat},0</coordinates>\n\t\t</Point>\n\t</Placemark>'.format(name=name, prov=prov, lat=lat, lon=lon)
 
-cityCount=0
-print "Name, Prov, Latitude, Longitude"
-for row in rows:
-    print "{}, {}, {}, {}".format(row[0], row[1], row[2][0], row[2][1])
-    cityCount+=1
+def getCursorList(infile):
+    """returns a list name province and lat long location"""
+    importarcpy()
 
-print "There are "+ str(cityCount)+" cities in the above list."
+    fieldlist=["Name","Prov", "SHAPE@XY"]
+    rows=arcpy.da.SearchCursor(infile, fieldlist)
 
-del row
-del rows
+    cursorlist = []
+
+    for row in rows:
+        cursorlist.append((row[0].encode('utf8'), row[1].encode('utf8'), row[2][0], row[2][1]))
+
+    del row
+    del rows
+
+    return cursorlist
